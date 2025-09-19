@@ -6,17 +6,17 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const registerUser = asyncHandler( async (req, res)=>{
     const {fullName, email, username, password} =req.body //get user detail
-    console.log("email:", email);
+    
     
     if (  // validation
-        [fullName, email, username, password].some(()=>field?.trim()=== "")
+        [fullName, email, username, password].some((field)=>field?.trim()=== "")
     ) {
         throw new ApiError(400, "All fields are required")
     }
 
     // check is user already exit 
 
-    const exitedUser = User.findOne({
+    const exitedUser =  await User.findOne({
         $or: [{ username }, { email }]
     })
     if (exitedUser) {
@@ -26,7 +26,12 @@ const registerUser = asyncHandler( async (req, res)=>{
     // check images and avatar
 
     const avatarLocalPath= req.files?.avatar[0]?.path;
-    const coverImageLocalPath= req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath= req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0){
+        coverImageLocalPath= req.files.coverImage[0].path
+    }
     
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar File is required")
