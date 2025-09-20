@@ -8,13 +8,13 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const generateAcessAndRefreshTokens= async(userId) => {
     try {
         const user=  await User.findById(userId)
-        const acessToken= user.generateAcessToken()
-        const refreshToken= user.generateRefreshtoken()
+        const accessToken= user.generateAcessToken()
+        const refreshToken= user.generateRefreshToken()
 
         user.refreshToken = refreshToken 
         await user.save({validateBeforeSave: false})
 
-        return {acessToken, refreshToken}
+        return {accessToken, refreshToken}
         
     } catch (error) {
         throw new ApiError(500,"something went wrong while generating access and refresh token")
@@ -95,7 +95,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     // req data
     const {email, username, password} =req.body
 
-    if (!username || !email){
+    if (!username && !email){
         throw new ApiError(400, "Username or Email is neccessary for Login.")
     }
 
@@ -119,7 +119,7 @@ const loginUser = asyncHandler(async (req, res)=>{
     // generate and validate access and refresh token
     const {accessToken, refreshToken} =await generateAcessAndRefreshTokens(user._id)
 
-    const loggedInUser = User.findById(user._id).select(" -password -refreshToken")
+    const loggedInUser = await User.findById(user._id).select(" -password -refreshToken")
     
     // send tokens in cookie
     const options = {
@@ -130,14 +130,12 @@ const loginUser = asyncHandler(async (req, res)=>{
     return res
     .status(200)
     .cookie("accessToken", accessToken, options)
-    .cookie("refershToken", refreshToken,options)
+    .cookie("refreshToken", refreshToken,options)
     .json(
         new ApiResponse(
             200,
             {
-                user:loggedInUser,
-                refreshToken,
-                accessToken
+                 user: loggedInUser, accessToken, refreshToken
             },
             "User LoggedIn Sucsessfully"
         )
@@ -170,7 +168,7 @@ const logoutUser = asyncHandler(async (req,res)=> {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken",options)
-    .json(new ApiResponse(200),{}, "User Logged Out")
+    .json(new ApiResponse(200,{}, "User Logged Out"))
 })
 
 
