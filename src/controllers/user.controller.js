@@ -152,8 +152,8 @@ const logoutUser = asyncHandler(async (req,res)=> {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1
             }
         },
         {
@@ -177,7 +177,7 @@ const logoutUser = asyncHandler(async (req,res)=> {
 
 const refreshAccessToken = asyncHandler(async (req, res)=>{
     //access the refresh token
-    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
     if (!incomingRefreshToken) {
         throw new ApiError(401, "unauthorised request")
@@ -209,17 +209,17 @@ const refreshAccessToken = asyncHandler(async (req, res)=>{
     
         return res
         .status(200)
-        .cookie("accessToken", accessToken)
-        .cookie("refreshToken", newrefreshToken)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newrefreshToken, options)
         .json(
             new ApiResponse(
                 200,
-                {accessToken, newrefreshToken},
+                {accessToken, refreshToken: newrefreshToken},
                 "Access token refreshed"
             )
         )
     } catch (error) {
-        throw new ApiError(401,error?.message|| "Inavalid refresh token")
+        throw new ApiError(401, error?.message|| "Inavalid refresh token")
     }
 })
 
@@ -228,7 +228,7 @@ const refreshAccessToken = asyncHandler(async (req, res)=>{
 const changeCurrentPassword = asyncHandler(async(req, res)=>{
     const {oldPassword, newPassword} = req.body
 
-    const user = User.findById(req.user?._id)
+    const user =await User.findById(req.user?._id)
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
     if(!isPasswordCorrect){
@@ -306,8 +306,8 @@ const updateUserAvatar = asyncHandler(async (req, res)=>{
                 avatar: avatar.url
             }
         },
-        {new: true}.select(" -password")
-    )
+        {new: true}
+    ).select(" -password")
 
     return res
     .status(200)
@@ -336,8 +336,8 @@ const updateUserCoverImage = asyncHandler(async (req, res)=>{
                 coverImage: coverImage.url
             }
         },
-        {new: true}.select(" -password")
-    )
+        {new: true}
+    ).select(" -password")
 
     return res
     .status(200)
@@ -362,7 +362,7 @@ const getUserChannelProfile= asyncHandler(async(req,res)=>{
         {
             $lookup: {
                 from: "subsrciptions",
-                localField: "$_id",
+                localField: "_id",
                 foreignField: "channel",
                 as: "subscribers"
             }
