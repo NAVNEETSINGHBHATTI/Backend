@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
 import {Comment} from "../models/comment.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
-import mongoose, { isValidObjectId, mongo } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 
 const getVideoComments = asyncHandler(async (req, res) => {
     try {
